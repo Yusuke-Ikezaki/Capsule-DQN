@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+from hyperdash import Experiment
 
 from environment import Environment
 from actor import Actor
@@ -59,7 +60,7 @@ def play(env, actor, recorder, is_training=True):
         if done or step >= limit:
             break
     
-    return R
+    return R, step
 
 def main(_):
     # build environment
@@ -68,6 +69,8 @@ def main(_):
     actor = Actor(env.action_space.n)
     # time recorder
     recorder = Recorder()
+    # hyperdash experiment
+    exp = Experiment("Capsule-DQN")
     
     # model saver
     saver = tf.train.Saver()
@@ -77,10 +80,10 @@ def main(_):
         sess.run(tf.global_variables_initializer())
 
     for episode in range(cfg.episode):
-        print("Episode {}".format(episode))
-        
         # train actor
-        _ = play(env, actor, recorder)
+        _, _ = play(env, actor, recorder)
+        
+        print("Episode {} completed.".format(episode))
         
         # save model
         if cfg.save and episode % cfg.save_freq == 0:
@@ -88,9 +91,13 @@ def main(_):
 
         # evaluate actor
         if episode % cfg.eval == 0:
-            R = play(env, actor, recorder, is_training=False)
+            R, step = play(env, actor, recorder, is_training=False)
+            exp.metric("reward", R)
+            exp.metric("step", step)
         
-            print("step:{}, R:{}".format(recorder.global_step, R))
+            print("global_step:{}".format(recorder.global_step))
+
+    exp.end()
 
 if __name__ == "__main__":
     tf.app.run()
