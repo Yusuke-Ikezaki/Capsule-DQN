@@ -4,7 +4,7 @@ import tensorflow as tf
 from hyperdash import Experiment
 
 from environment import Environment
-from actor import Actor
+from agent import Agent
 from config import cfg
 
 class Recorder:
@@ -66,7 +66,7 @@ def main(_):
     # build environment
     env = Environment()
     # create actor
-    actor = Actor(env.action_space.n)
+    actor = Agent(env.action_space.n)
     # time recorder
     recorder = Recorder()
     # hyperdash experiment
