@@ -1,4 +1,3 @@
-import random
 import numpy as np
 import tensorflow as tf
 
@@ -50,13 +49,10 @@ class DDQN:
 
         # Update target Q
         self.target_train_op = copy_params(self.Q, target_Q)
-
-        # replay buffer
-        self.D = []
     
-    def update(self, sess):
+    def update(self, sess, memory):
         # sample from replay buffer
-        samples = random.sample(self.D, cfg.batch_size)
+        samples = memory.sample()
         s = np.asarray([sample[0] for sample in samples], dtype=np.float32)
         a = np.asarray([[sample[1]] for sample in samples], dtype=np.int32)
         r = np.asarray([[sample[2]] for sample in samples], dtype=np.float32)
@@ -72,13 +68,3 @@ class DDQN:
     def greedy(self, s):
         probs = self.Q(s, reuse=True)
         return np.argmax(probs)
-    
-    def set_exp(self, exp):
-        if len(self.D) <= cfg.N:
-            self.D.append(exp)
-        else:
-            s, a, r, done, _ = self.D[0]
-            self.D = self.D[1:]
-            self.D.append(exp)
-            
-            del s, a, r, done

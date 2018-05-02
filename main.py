@@ -27,9 +27,11 @@ def play(env, agent, is_training=True):
         # take action
         next_s, r, done, _ = env.step(a)
        
-        # update agent
         if is_training:
-            agent.after_action(sess, s, a, r, done, next_s)
+            # store experience
+            agent.memory.add((s, a, r*cfg.reward_scale, done, next_s))
+            # update agent
+            agent.after_action(sess)
                
         # set state
         s = next_s

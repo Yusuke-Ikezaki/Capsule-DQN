@@ -2,12 +2,14 @@ import random
 import numpy as np
 
 from dqn import DDQN
+from memory import Memory
 from config import cfg
 
 class Agent:
     def __init__(self, action_n):
         self.action_n = action_n
         self.dqn = DDQN(input_shape=[cfg.batch_size, 84, 84, cfg.state_length], action_n=action_n)
+        self.memory = Memory()
         self.global_step = 0
     
     def get_action(self, s, is_training=True):
@@ -23,13 +25,10 @@ class Agent:
         
         return a
 
-    def after_action(self, sess, s, a, r, done, next_s):
-        # store experience
-        self.dqn.set_exp((s, a, r*cfg.reward_scale, done, next_s))
-        
+    def after_action(self, sess):
         # update model
         if self.global_step >= cfg.replay_start_size:
-            self.dqn.update(sess)
+            self.dqn.update(sess, self.memory)
         # update target
         if self.global_step % cfg.sync_freq == 0:
             self.dqn.update_target(sess)
