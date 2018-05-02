@@ -6,9 +6,10 @@ flags = tf.app.flags
 #    hyper parameters      #
 ############################
 
-flags.DEFINE_string("model", "capsule", "model")
+flags.DEFINE_string("model", "capsule", "model network")
 flags.DEFINE_integer("batch_size", 32, "batch size")
 flags.DEFINE_integer("state_length", 4, "length of state")
+flags.DEFINE_integer("action_repeat", 4, "number of skip frame")
 flags.DEFINE_integer("replay_start_size", 10000, "replay start size")
 flags.DEFINE_integer("decay", 500000, "eps decay")
 flags.DEFINE_float("min_epsilon", 0.1, "minimum epsilon")

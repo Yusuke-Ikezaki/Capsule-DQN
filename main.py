@@ -31,7 +31,7 @@ def play(env, actor, recorder, is_training=True):
             
         # select action
         a = actor.epsilon_greedy(s, epsilon)
-       
+        
         # take action
         next_s, r, done, _ = env.step(a)
        
