@@ -7,13 +7,9 @@ from environment import Environment
 from agent import Agent
 from config import cfg
 
-class Recorder:
-    def __init__(self):
-        self.global_step = 0
-
 sess = tf.Session()
 
-def play(env, actor, recorder, is_training=True):
+def play(env, agent, is_training=True):
     # initialize environment
     s = env.reset()
     # total reward
@@ -25,27 +21,15 @@ def play(env, actor, recorder, is_training=True):
     
     # play game
     while True:
-        # epsilon decay
-        epsilon = (1.0 if recorder.global_step < cfg.replay_start_size else \
-            max(cfg.min_epsilon, np.interp(recorder.global_step, [0, cfg.decay], [1.0, cfg.min_epsilon]))) if is_training else 0.01
-            
         # select action
-        a = actor.epsilon_greedy(s, epsilon)
+        a = agent.get_action(s, is_training)
         
         # take action
         next_s, r, done, _ = env.step(a)
        
+        # update agent
         if is_training:
-            # store experience
-            actor.dqn.set_exp((s, a, r*cfg.reward_scale, done, next_s))
-            # update model
-            if recorder.global_step >= cfg.replay_start_size:
-                actor.dqn.update(sess)
-            # update target
-            if recorder.global_step % cfg.sync_freq == 0:
-                actor.dqn.update_target(sess)
-            
-            recorder.global_step += 1
+            agent.after_action(sess, s, a, r, done, next_s)
                
         # set state
         s = next_s
@@ -65,10 +49,8 @@ def play(env, actor, recorder, is_training=True):
 def main(_):
     # build environment
     env = Environment()
-    # create actor
-    actor = Agent(env.action_space.n)
-    # time recorder
-    recorder = Recorder()
+    # create agent
+    agent = Agent(env.action_space.n)
     # hyperdash experiment
     exp = Experiment("Capsule-DQN")
     
@@ -80,8 +62,8 @@ def main(_):
         sess.run(tf.global_variables_initializer())
 
     for episode in range(cfg.episode):
-        # train actor
-        _, _ = play(env, actor, recorder)
+        # train agent
+        _, _ = play(env, agent)
         
         print("Episode {} completed.".format(episode))
         
@@ -89,13 +71,13 @@ def main(_):
         if cfg.save and episode % cfg.save_freq == 0:
             saver.save(sess, cfg.stored_path)
 
-        # evaluate actor
+        # evaluate agent
         if episode % cfg.eval == 0:
-            R, step = play(env, actor, recorder, is_training=False)
+            R, step = play(env, agent, is_training=False)
             exp.metric("reward", R)
             exp.metric("step", step)
         
-            print("global_step:{}".format(recorder.global_step))
+            print("global_step:{}".format(agent.global_step))
 
     exp.end()
 
