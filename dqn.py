@@ -29,11 +29,11 @@ class DDQN:
         q_val = tf.expand_dims(tf.gather_nd(probs, indices), axis=1)
         
         # TD target
-        self.done = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
         self.r = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
+        self.done = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
         self.next_s = tf.placeholder(shape=input_shape, dtype=tf.float32)
         
-        # D-DQN
+        # DDQN
         a_max = tf.expand_dims(tf.argmax(self.Q(self.next_s, reuse=True), axis=1), axis=1)
         a_max = tf.to_int32(a_max)
         target_q_val = tf.expand_dims(tf.gather_nd(target_Q(self.next_s), tf.concat(values=[first, a_max], axis=1)), axis=1)
@@ -41,11 +41,14 @@ class DDQN:
         loss = huber_loss(y, q_val)
 
         # Update Q
-        opt = tf.train.RMSPropOptimizer(0.00025, 0.99, 0.0, 1e-6)
+        opt = tf.train.RMSPropOptimizer(0.001, epsilon=1e-8)
+        """
         grads_and_vars = opt.compute_gradients(loss)
         grads_and_vars = [[grad, var] for grad, var in grads_and_vars \
                         if grad is not None and (var.name.startswith("Q") or var.name.startswith("shared"))]
         self.train_op = opt.apply_gradients(grads_and_vars)
+        """
+        self.train_op = opt.minimize(loss)
 
         # Update target Q
         self.target_train_op = copy_params(self.Q, target_Q)

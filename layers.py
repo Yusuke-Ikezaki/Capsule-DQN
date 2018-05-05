@@ -2,10 +2,9 @@ import numpy as np
 import tensorflow as tf
 
 from functions import routing, squash
-from config import cfg
 
 # convolutional layer
-def conv(x, kernel, strides, padding="SAME", activation_fn=None, scope="conv"):
+def conv(x, kernel, strides, padding="VALID", activation_fn=None, scope="conv"):
     with tf.variable_scope(scope):
         W = tf.get_variable("W", kernel, dtype=tf.float32, initializer=tf.random_normal_initializer(stddev=0.02))
         conv = tf.nn.conv2d(x, W, strides=strides, padding=padding)
