@@ -12,8 +12,6 @@ def play(env, agent, is_training=True):
     R = 0
     # time step
     step = 0
-    # time step limit
-    limit = env.spec.tags.get("wrapper_config.TimeLimit.max_episode_steps")
     
     # play game
     while True:
@@ -24,10 +22,8 @@ def play(env, agent, is_training=True):
         next_s, r, done, _ = env.step(a)
        
         if is_training:
-            # store experience
-            agent.replay_memory.add((s, a, r, done, next_s))
             # update agent
-            agent.after_action()
+            agent.after_action(s, a, r, done, next_s)
                
         # set state
         s = next_s
@@ -39,7 +35,7 @@ def play(env, agent, is_training=True):
         if cfg.render:
             env.render()
             
-        if done or step >= limit:
+        if done:
             break
     
     return R, step
@@ -57,7 +53,6 @@ def main(_):
         _, _ = play(env, agent)
         
         print("Episode {} completed.".format(episode))
-        print("t: {}".format(agent.t))
 
         # evaluate agent
         if episode % cfg.eval_freq == 0:

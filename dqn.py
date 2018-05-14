@@ -14,27 +14,28 @@ def copy_params(src, dst):
     return op
 
 class DDQN:
-    def __init__(self, input_shape, action_n):
-        self.Q = QFunction(action_n, scope="Q")
+    def __init__(self, action_n):
+        # create Q networks
+        Q = QFunction(action_n, scope="Q")
         target_Q = QFunction(action_n, scope="target_Q")
         
-        # Forward Q
-        self.s = tf.placeholder(shape=input_shape, dtype=tf.float32)
+        # define placeholders
+        self.s = tf.placeholder(shape=[None, cfg.height, cfg.width, cfg.state_length], dtype=tf.float32)
         self.a = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.int32)
-        probs = self.Q(self.s)
+        self.r = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
+        self.done = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
+        self.next_s = tf.placeholder(shape=[None, cfg.height, cfg.width, cfg.state_length], dtype=tf.float32)
+        
+        # predict Q values
+        self.probs = Q(self.s)
         
         # add offset
         first = tf.expand_dims(tf.range(cfg.batch_size), axis=1)
         indices = tf.concat(values=[first, self.a], axis=1)
-        q_val = tf.expand_dims(tf.gather_nd(probs, indices), axis=1)
-        
-        # TD target
-        self.r = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
-        self.done = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
-        self.next_s = tf.placeholder(shape=input_shape, dtype=tf.float32)
+        q_val = tf.expand_dims(tf.gather_nd(self.probs, indices), axis=1)
         
         # DDQN
-        a_max = tf.expand_dims(tf.argmax(self.Q(self.next_s, reuse=True), axis=1), axis=1)
+        a_max = tf.expand_dims(tf.argmax(Q(self.next_s, reuse=True), axis=1), axis=1)
         a_max = tf.to_int32(a_max)
         target_q_val = tf.expand_dims(tf.gather_nd(target_Q(self.next_s), tf.concat(values=[first, a_max], axis=1)), axis=1)
         y = self.r + cfg.gamma*(1.0 - self.done)*target_q_val
@@ -42,16 +43,10 @@ class DDQN:
 
         # Update Q
         opt = tf.train.RMSPropOptimizer(0.001, epsilon=1e-8)
-        """
-        grads_and_vars = opt.compute_gradients(loss)
-        grads_and_vars = [[grad, var] for grad, var in grads_and_vars \
-                        if grad is not None and (var.name.startswith("Q") or var.name.startswith("shared"))]
-        self.train_op = opt.apply_gradients(grads_and_vars)
-        """
         self.train_op = opt.minimize(loss)
 
         # Update target Q
-        self.target_train_op = copy_params(self.Q, target_Q)
+        self.target_train_op = copy_params(Q, target_Q)
     
     def update(self, sess, memory):
         # sample from replay buffer
@@ -68,6 +63,6 @@ class DDQN:
     def update_target(self, sess):
         _ = sess.run(self.target_train_op)
     
-    def greedy(self, s):
-        probs = self.Q(s, reuse=True)
+    def greedy(self, sess, s):
+        probs = sess.run(self.probs, feed_dict={self.s: s})
         return np.argmax(probs)

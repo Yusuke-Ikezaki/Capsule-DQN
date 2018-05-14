@@ -13,7 +13,7 @@ class Agent:
         self.t = 0
         
         # create DQN
-        self.dqn = DDQN(input_shape=[cfg.batch_size, 84, 84, cfg.state_length], action_n=action_n)
+        self.dqn = DDQN(action_n)
         
         # create replay memory
         self.replay_memory = Memory()
@@ -40,24 +40,33 @@ class Agent:
         
         # epsilon greedy
         if self.t < cfg.replay_start_size or np.random.rand() < epsilon:
+            # explore
             a = random.randrange(self.action_n)
         else:
-            a = self.dqn.greedy(s[np.newaxis])
+            # exploit
+            a = self.dqn.greedy(self.sess, s[np.newaxis])
         
         return a
 
-    def after_action(self):
-        # update model
+    def after_action(self, s, a, r, done, next_s):
+        # store experience
+        self.replay_memory.add((s, a, r, done, next_s))
+        
         if self.t >= cfg.replay_start_size:
-            self.dqn.update(self.sess, self.replay_memory)
+            # update network
+            if self.t % cfg.train_freq == 0:
+                self.dqn.update(self.sess, self.replay_memory)
         
-        # update target
-        if self.t % cfg.sync_freq == 0:
-            self.dqn.update_target(self.sess)
+            # update target network
+            if self.t % cfg.sync_freq == 0:
+                self.dqn.update_target(self.sess)
         
-        # save network
-        if cfg.save and self.t % cfg.save_freq == 0:
-            self.saver.save(self.sess, cfg.stored_path)
-            print("Successfully saved network.")
+            # save network
+            if cfg.save and self.t % cfg.save_freq == 0:
+                self.saver.save(self.sess, cfg.stored_path)
+                print("Successfully saved network.")
+            
+        if done:
+            print("t: {}".format(self.t))
     
         self.t += 1

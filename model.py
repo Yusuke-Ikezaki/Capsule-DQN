@@ -14,13 +14,13 @@ class QFunction:
         
         with tf.variable_scope(self.scope, reuse=reuse):
             """
-            conv1 = conv(X, [28, 28, cfg.state_length, 256], [1, 1, 1, 1], activation_fn=tf.nn.relu)
-            primaryCaps = capsule(conv1, num_outputs=32, vec_len=8, kernel=28, strides=2)
+            conv1 = conv(X, [9, 9, cfg.state_length, 256], [1, 1, 1, 1], activation_fn=tf.nn.relu)
+            primaryCaps = capsule(conv1, num_outputs=32, vec_len=8, kernel=9, strides=2)
             digitCaps = capsule(primaryCaps, num_outputs=self.a, vec_len=16)
             v_length = tf.sqrt(tf.reduce_sum(tf.square(digitCaps), axis=2, keepdims=True))
             output = tf.squeeze(tf.nn.softmax(v_length, axis=1), axis=[2, 3])
             """
-        
+            
             conv1 = conv(X, [8, 8, cfg.state_length, 32], [1, 4, 4, 1], activation_fn=tf.nn.relu, scope="conv1")
             conv2 = conv(conv1, [4, 4, 32, 64], [1, 2, 2, 1], activation_fn=tf.nn.relu, scope="conv2")
             conv3 = conv(conv2, [3, 3, 64, 64], [1, 1 ,1, 1], activation_fn=tf.nn.relu, scope="conv3")
