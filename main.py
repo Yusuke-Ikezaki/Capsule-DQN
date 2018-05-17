@@ -18,23 +18,27 @@ def play(env, agent, is_training=True):
         # select action
         a = agent.get_action(s, is_training)
         
-        # take action
-        next_s, r, done, _ = env.step(a)
-       
-        if is_training:
-            # update agent
-            agent.after_action(s, a, r, done, next_s)
+        for _ in range(cfg.action_repeat):
+            # take action
+            next_s, r, done, _ = env.step(a)
+           
+            if is_training:
+                # update agent
+                agent.after_action(s, a, r, done, next_s)
                
-        # set state
-        s = next_s
-        
-        R += r
-        step += 1
-    
-        # render current state
-        if cfg.render:
-            env.render()
+            # set state
+            s = next_s
             
+            R += r
+            step += 1
+    
+            # render current state
+            if cfg.render:
+                env.render()
+
+            if done:
+                break
+        
         if done:
             break
     

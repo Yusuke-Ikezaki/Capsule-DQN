@@ -32,14 +32,7 @@ class Environment:
         return self.states
 
     def step(self, a):
-        cumulated_reward = 0
-        
-        for _ in range(cfg.action_repeat):
-            obs, r, done, info = self.env.step(a)
-            cumulated_reward += r
-        
-            if done:
-                break
+        obs, r, done, info = self.env.step(a)
         
         pred = preprocess(obs)
         last = self.states[:,:,1:]
@@ -47,7 +40,7 @@ class Environment:
         
         del obs, pred, last
 
-        return self.states, cumulated_reward, done, info
+        return self.states, r, done, info
 
     def render(self):
         self.env.render()
