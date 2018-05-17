@@ -24,28 +24,30 @@ class DDQN:
         self.a = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.int32)
         self.r = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
         self.done = tf.placeholder(shape=[cfg.batch_size, 1], dtype=tf.float32)
-        self.next_s = tf.placeholder(shape=[None, cfg.height, cfg.width, cfg.state_length], dtype=tf.float32)
+        self.next_s = tf.placeholder(shape=[cfg.batch_size, cfg.height, cfg.width, cfg.state_length], dtype=tf.float32)
         
         # predict Q values
         self.probs = Q(self.s)
         
         # add offset
         first = tf.expand_dims(tf.range(cfg.batch_size), axis=1)
-        indices = tf.concat(values=[first, self.a], axis=1)
-        q_val = tf.expand_dims(tf.gather_nd(self.probs, indices), axis=1)
         
-        # DDQN
-        a_max = tf.expand_dims(tf.argmax(Q(self.next_s, reuse=True), axis=1), axis=1)
-        a_max = tf.to_int32(a_max)
-        target_q_val = tf.expand_dims(tf.gather_nd(target_Q(self.next_s), tf.concat(values=[first, a_max], axis=1)), axis=1)
+        # choose Q value
+        q_val = tf.expand_dims(tf.gather_nd(self.probs, tf.concat([first, self.a], axis=1)), axis=1)
+        
+        # create teacher
+        a_max = tf.expand_dims(tf.argmax(Q(self.next_s, reuse=True), axis=1, output_type=tf.int32), axis=1)
+        target_q_val = tf.expand_dims(tf.gather_nd(target_Q(self.next_s), tf.concat([first, a_max], axis=1)), axis=1)
         y = self.r + cfg.gamma*(1.0 - self.done)*target_q_val
-        loss = huber_loss(y, q_val)
+        
+        # calculate loss
+        self.loss = huber_loss(y, q_val)
 
-        # Update Q
+        # update Q
         opt = tf.train.RMSPropOptimizer(0.001, epsilon=1e-8)
-        self.train_op = opt.minimize(loss)
+        self.train_op = opt.minimize(self.loss)
 
-        # Update target Q
+        # update target Q
         self.target_train_op = copy_params(Q, target_Q)
     
     def update(self, sess, memory):
