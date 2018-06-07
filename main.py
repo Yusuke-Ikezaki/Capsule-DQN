@@ -1,8 +1,8 @@
 import tensorflow as tf
-from hyperdash import Experiment
+# from hyperdash import Experiment
 
-from environment import Environment
-from agent import Agent
+from environment import Environment, TestEnvironment
+from agent import Agent, TestAgent
 from config import cfg
 
 def play(env, agent, is_training=True):
@@ -46,17 +46,17 @@ def play(env, agent, is_training=True):
 
 def main(_):
     # build environment
-    env = Environment()
+    env = TestEnvironment()
     # create agent
-    agent = Agent(env.action_space.n)
+    agent = TestAgent(env.action_space.n)
     # hyperdash experiment
-    exp = Experiment("Capsule-DQN")
+    # exp = Experiment("Capsule-DQN")
 
     for episode in range(cfg.episode):
         # train agent
         _, _ = play(env, agent)
         
-        print("Episode {} completed.".format(episode))
+        # print("Episode {} completed.".format(episode))
 
         # evaluate agent
         if episode % cfg.eval_freq == 0:
@@ -64,7 +64,7 @@ def main(_):
             exp.metric("reward", R)
             exp.metric("step", step)
 
-    exp.end()
+    # exp.end()
 
 if __name__ == "__main__":
     tf.app.run()
