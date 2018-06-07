@@ -61,8 +61,8 @@ def main(_):
         # evaluate agent
         if episode % cfg.eval_freq == 0:
             R, step = play(env, agent, is_training=False)
-            exp.metric("reward", R)
-            exp.metric("step", step)
+            # exp.metric("reward", R)
+            # exp.metric("step", step)
 
     # exp.end()
 
