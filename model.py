@@ -25,7 +25,7 @@ class QFunction:
             conv2 = conv(conv1, [4, 4, 32, 64], [1, 2, 2, 1], activation_fn=tf.nn.relu, scope="conv2")
             conv3 = conv(conv2, [3, 3, 64, 64], [1, 1 ,1, 1], activation_fn=tf.nn.relu, scope="conv3")
             flt, dim = flatten(conv3)
-            fc1 = fc(flt, dim, 512, scope="fc1")
+            fc1 = fc(flt, dim, 512, activation_fn=tf.nn.relu, scope="fc1")
             output = fc(fc1, 512, self.a, scope="output")
         
             return output

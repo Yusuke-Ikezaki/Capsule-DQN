@@ -44,7 +44,7 @@ class DDQN:
         self.loss = huber_loss(y, q_val)
 
         # update Q
-        opt = tf.train.RMSPropOptimizer(0.001, epsilon=1e-8)
+        opt = tf.train.AdamOptimizer(cfg.eta)
         self.train_op = opt.minimize(self.loss)
 
         # update target Q
